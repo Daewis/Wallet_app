@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useAuth } from "../../context/authContext";
 import { Link, useRouter, Stack } from "expo-router";
@@ -7,9 +7,16 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../constants/colors";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import * as WebBrowser from "expo-web-browser";
+import * as AuthSession from "expo-auth-session";
+import * as Google from "expo-auth-session/providers/google";
+
+WebBrowser.maybeCompleteAuthSession();
+
+const redirectUri = AuthSession.makeRedirectUri({ scheme: "mobile" });
 
 export default function SignUpScreen() {
-  const { signUp, resendVerification } = useAuth();
+  const { signUp, resendVerificationEmail, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   const [emailAddress, setEmailAddress] = useState("");
@@ -17,6 +24,20 @@ export default function SignUpScreen() {
   const [pending, setPending] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    redirectUri,
+  });
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      const { id_token } = response.params;
+      signInWithGoogle(id_token).catch((err) => setError(err.message));
+    }
+  }, [response]);
 
   const onSignUp = async () => {
     setError(""); // Clear previous errors
@@ -54,7 +75,7 @@ export default function SignUpScreen() {
 
   const onResend = async () => {
     try {
-      await resendVerification();
+      await resendVerificationEmail();
       alert("Verification email sent again.");
     } catch (err) {
       alert(err.message);
@@ -144,6 +165,21 @@ export default function SignUpScreen() {
                     <Text style={styles.buttonText}>Sign up</Text>
                   </TouchableOpacity>
                 )}
+
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <TouchableOpacity
+          style={styles.googleButton}
+          disabled={!request}
+          onPress={() => promptAsync()}
+        >
+          <Ionicons name="logo-google" size={20} color={COLORS.text} />
+          <Text style={styles.googleButtonText}>Continue with Google</Text>
+        </TouchableOpacity>
 
         {/* Footer with Forgot Password & Sign In Link */}
         <View style={[styles.footerContainer, { flexDirection: 'column', gap: 15 }]}>

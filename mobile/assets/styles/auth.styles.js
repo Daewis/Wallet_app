@@ -47,6 +47,38 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
+  divider: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  dividerText: {
+    marginHorizontal: 10,
+    color: COLORS.textLight,
+    fontSize: 14,
+  },
+  googleButton: {
+    flexDirection: "row",
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    gap: 10,
+  },
+  googleButtonText: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: "600",
+  },
   footerContainer: {
     flexDirection: "row",
     justifyContent: "center",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Text, TextInput, View, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Link, useRouter, Stack } from "expo-router";
 import { useAuth } from "../../context/authContext";
@@ -6,15 +6,49 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import {styles} from "../../assets/styles/auth.styles";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../constants/colors";
+import * as WebBrowser from "expo-web-browser";
+import * as AuthSession from "expo-auth-session";
+import * as Google from "expo-auth-session/providers/google";
+
+WebBrowser.maybeCompleteAuthSession();
+
+const redirectUri = AuthSession.makeRedirectUri({ scheme: "mobile" });
 
 export default function SignInScreen() {
-  const { signIn, setActive } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    redirectUri,
+  });
+
+  console.log("Redirect URI being used:", redirectUri);
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      console.log("Google auth response:", JSON.stringify(response, null, 2));
+      const id_token = response.params?.id_token || response.authentication?.idToken;
+      if (!id_token) {
+        console.log("No id_token found in response");
+        setError("Google sign-in failed: no ID token returned");
+        return;
+      }
+      signInWithGoogle(id_token).catch((err) => {
+        console.log("Firebase signInWithGoogle error:", err);
+        setError(err.message);
+      });
+    } else if (response?.type === "error") {
+      console.log("Google auth error response:", response.error);
+    }
+  }, [response]);
 
   const onLogin = async () => {
      if (!email || !password) {
@@ -113,6 +147,21 @@ export default function SignInScreen() {
           </TouchableOpacity>
         )}
 
+      <View style={styles.divider}>
+        <View style={styles.dividerLine} />
+        <Text style={styles.dividerText}>OR</Text>
+        <View style={styles.dividerLine} />
+      </View>
+
+      <TouchableOpacity
+        style={styles.googleButton}
+        disabled={!request}
+        onPress={() => promptAsync()}
+      >
+        <Ionicons name="logo-google" size={20} color={COLORS.text} />
+        <Text style={styles.googleButtonText}>Continue with Google</Text>
+      </TouchableOpacity>
+
        <View style={[styles.footerContainer, { flexDirection: 'column', gap: 15 }]}>
         <Link href="/(auth)/reset-password">
           <Text style={styles.linkText}>Forgot Password?</Text>
@@ -129,4 +178,3 @@ export default function SignInScreen() {
     </KeyboardAwareScrollView>
   );
 }
-

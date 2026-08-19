@@ -4,6 +4,8 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithCredential,
+  GoogleAuthProvider,
   sendEmailVerification,
   sendPasswordResetEmail,
   signOut as firebaseSignOut,
@@ -59,6 +61,11 @@ export function AuthProvider({ children }) {
     return result;
   };
 
+  const signInWithGoogle = async (idToken) => {
+    const credential = GoogleAuthProvider.credential(idToken);
+    return await signInWithCredential(auth, credential);
+  };
+
   const resendVerificationEmail = async () => {
     if (auth.currentUser) {
       await sendEmailVerification(auth.currentUser);
@@ -81,6 +88,7 @@ export function AuthProvider({ children }) {
         signIn,
         signUp,
         signOut,
+        signInWithGoogle,
         resendVerificationEmail,
         resetPassword
       }}
