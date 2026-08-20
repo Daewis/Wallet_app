@@ -1,21 +1,11 @@
 import { Redirect, Stack } from "expo-router";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../../firebaseConfig";
-import { useEffect, useState } from "react";
+import { useAuth } from "../../context/authContext";
 
 export default function AuthLayout() {
-  const [isSignedIn, setIsSignedIn] = useState(null);
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setIsSignedIn(!!user);
-    });
-
-    return unsub;
-  }, []);
-
-  if (isSignedIn === null) return null; 
-  if (isSignedIn) {
+  if (loading) return null;
+  if (user) {
     return <Redirect href="/" />;
   }
 

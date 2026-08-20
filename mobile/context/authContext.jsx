@@ -11,7 +11,6 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth";
 import { auth } from "../firebaseConfig";
-import { useRouter, useSegments } from "expo-router";
 
 const AuthContext = createContext(null);
 
@@ -22,10 +21,10 @@ export function useAuth() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);  
   const [loading, setLoading] = useState(true);
-  const segments = useSegments();
-  const router = useRouter();
 
-  // Listen to Firebase auth state
+  // Listen to Firebase auth state - this is the single source of truth.
+  // Route protection/redirects are handled declaratively in (auth)/_layout.jsx
+  // and (root)/_layout.jsx based on `user` and `loading` from this context.
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
@@ -34,21 +33,6 @@ export function AuthProvider({ children }) {
 
     return unsub;
   }, []);
-
-  // Protect routes
-  useEffect(() => {
-    if (loading) return;
-
-    const inAuthGroup = segments[0] === "(auth)";
-
-    if (user && inAuthGroup) {
-      router.replace("/");
-    }
-
-    if (!user && !inAuthGroup) {
-      router.replace("/(auth)/sign-in");
-    }
-  }, [user, loading, segments, router]);
 
   // AUTH FUNCTIONS
   const signIn = async (email, password) => {
